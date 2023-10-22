@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bootstrap demo</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+            crossorigin="anonymous">
+        <link rel="stylesheet" href="css/Custom.css">
+    </head>
+    <body>
+        <header class="bg-dark text-white py-3">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <h1 class="m-0">Le Aste</h1>
+                <div class="user-profile">
+                    <%if (!locals.auten){%>
+                        <a href="login" class="btn btn-primary">Accedi</a>
+                    <%}else{%>
+                        <img src="/UserImg" alt="Immagine Profilo" class="rounded-circle" id="user-profile-img" data-bs-toggle="dropdown" aria-expanded="false" width="40" height="40">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-profile-img">
+                            <li><a class="dropdown-item" href="/user">Pagina Personale</a></li>
+                            <li><form action="/logout?_method=DELETE" method="post">
+                                    <button class="dropdown-item" type="submit">logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    <%}%>
+                </div>
+            </div>
+        </header>
+
+        <main class="container-fluid mt-4">
+            <div class="row row-cols-2 row-cols-md-3">
+                <% locals.elementi.forEach(element => {%>
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <a href="/asta/<%=element.Asta%>" class="text-decoration-none">
+                            <div class="card">
+                                <img src="/api/asta/<%=element.Creatore %>/<%= element.Asta%>/1" alt="Immagine" class="card-img-top">
+                                <div class="card-body">
+                                    <h2 class="card-title"><%=element.Titolo%></h2>
+                                    <p class="card-text"><%=element.Descrizione%></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <%})%>
+                <!-- Aggiungi altri pannelli qui -->
+            </div>
+        </main>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+            crossorigin="anonymous"></script>
+    </body>
+</html>

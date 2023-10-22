@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bootstrap demo</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+            crossorigin="anonymous">
+        <link rel="stylesheet" href="css/Custom.css">
+    </head>
+    <body class="bg-light d-flex flex-column min-vh-100 justify-content-center align-items-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 my-auto text-center">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">Registrazione</div>
+                        <div class="card-body">
+                            <form action="/register" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="nome" class="form-label">Nome</label>
+                                    <input type="text" class="form-control" id="nome" name="nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cognome" class="form-label">Cognome</label>
+                                    <input type="text" class="form-control" id="cognome" name="cognome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="immagine" class="form-label">Carica Immagine di Profilo</label>
+                                    <input type="file" class="form-control" id="immagine" name="immagine" accept="image/*">
+                                    <img src="" alt="Anteprima Immagine" class="image-preview mt-2">
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Registrati</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="card-footer text-center">
+                            Hai già un account? <a href="accesso.html">Accedi</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+            crossorigin="anonymous"></script>
+        <script>
+            document.getElementById('immagine').addEventListener('change', function () {
+                var preview = document.querySelector('.image-preview');
+                var file = this.files[0];
+                var reader = new FileReader();
+    
+                reader.onload = function () {
+                    preview.src = reader.result;
+                    preview.style.display = 'block';
+                }
+    
+                if (file) {
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.src = '';
+                    preview.style.display = 'none';
+                }
+            });
+        </script>
+    </body>
+</html>

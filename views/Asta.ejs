@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bootstrap demo</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+            crossorigin="anonymous">
+    </head>
+    <body>
+        <header class="bg-dark text-white py-3">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <a href="/" class="text-decoration-none"><h1 class="m-0">← Back</h1></a>
+                <div class="user-profile">
+                    <%if (!locals.auten){%>
+                        <a href="/login" class="btn btn-primary">Accedi</a>
+                    <%}else{%>
+                        <img src="/UserImg" alt="Immagine Profilo" class="rounded-circle" id="user-profile-img" data-bs-toggle="dropdown" aria-expanded="false" width="40" height="40">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-profile-img">
+                            <li><a class="dropdown-item" href="/user">Pagina Personale</a></li>
+                            <li><form action="/logout?_method=DELETE" method="post">
+                                    <button class="dropdown-item" type="submit">logout</button>
+                                </form>
+                            </li>
+                        </ul>
+                    <%}%>
+                </div>
+            </div>
+        </header>
+
+        
+        <main class="bg-light">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-12 text-center mt-4">
+                        <!-- Timer -->
+                        <p id="countdown-timer">Tempo rimasto: Caricamento...</p>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-3">
+                        <!-- Colonna sinistra con immagini miniature -->
+                        <div class="card">
+                            <div class="card-body">
+                                <% for (let x = 1; x <= locals.img; x++) { %>
+                                    <img src="/api/asta/<%= locals.User_ID %>/<%= locals.ID_Asta %>/<%= x %>" alt="" class="img-thumbnail mb-2">
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- Colonna centrale con immagine principale -->
+                        <div class="card">
+                            <img src="/api/asta/<%= locals.User_ID %>/<%= locals.ID_Asta %>/1" alt="" class="card-img-top">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <!-- Colonna destra con titolo, descrizione e form per l'offerta -->
+                        <div class="card">
+                            <div class="card-body">
+                                <h2><%= locals.Titolo %></h2>
+                                <p><%= locals.Descrizione %></p>
+                                <p id="countdown-timer-offer">Caricamento...</p>
+                                <p id="offer-description">Valore dell'offerta: Caricamento...</p>
+                                <% if (locals.auten) { %>
+                                    <form id="offerta-form">
+                                        <div class="mb-3">
+                                            <label for="offerta" class="form-label">Offerta:</label>
+                                            <input type="number" id="offerta" name="offerta" class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary" id="invia-offerta">Fai OFFERTA</button>
+                                    </form>
+                                <% } else { %>
+                                    <p>Autenticati per fare un'offerta.</p>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <script>
+            const thumbnails = document.querySelectorAll('.img-thumbnail');
+            const mainImage = document.querySelector('.card-img-top');
+        
+            thumbnails.forEach((thumbnail, index) => {
+                thumbnail.addEventListener('click', () => {
+                    mainImage.src = `/api/asta/<%= locals.User_ID %>/<%= locals.ID_Asta %>/${index + 1}`;
+                });
+            });
+
+            // Funzione per aggiornare il timer
+            
+            async function updateTimer() {
+                if (timerData) {
+                    const countdownTimer = document.querySelector('#countdown-timer');
+                    const now = new Date()
+                    const scadenzaData = await timerData
+                    const scadenza = new Date(scadenzaData.Scadenza)
+                    console.log(scadenza - now)
+                    const timeRemaining = scadenza.getTime() - now.getTime();
+                    console.log(`TimerData ${scadenza} Now ${now} timeRemaning ${timeRemaining}`)
+                    
+                    if (timeRemaining <= 0) {
+                        countdownTimer.innerHTML = 'Asta scaduta';
+                        clearInterval(timerMian)
+                    } else {
+                        const hours = Math.floor(((timeRemaining/1000)/60)/60)
+                        const minutes = Math.floor((timeRemaining/1000)/60)%60
+                        const seconds = Math.floor(timeRemaining/1000)%60;
+                        countdownTimer.innerHTML = `Tempo rimasto: ${hours}:${minutes}:${seconds}`;
+                    }
+                }
+            }
+    
+            // Funzione per aggiornare l'offerta ogni 10 minuti
+            async function updateOffer() {
+                try {
+                    // Fetch dell'API dell'offerta
+                    const responseOffer = await fetch(`/api/asta/offerta/<%= locals.ID_Asta %>`);
+                    const offerData = await responseOffer.json();
+                    console.log(offerData)
+                    // Aggiorna il campo descrizione con il valore dell'offerta
+                    const offerDescription = document.querySelector('#offer-description');
+                    offerDescription.innerHTML = `Valore dell'offerta: ${offerData.Offerta}`;
+                    const scadenzaData = await timerData
+                    const scadenza = new Date(scadenzaData.Scadenza)
+                } catch (error) {
+                    console.error('Errore nella fetch dell\'API dell\'offerta', error);
+                }
+            }
+    
+            // Esegui la fetch dei dati della scadenza all'avvio della pagina
+            async function fetchTimerData() {
+                try {
+                    const responseTimer = await fetch(`/api/asta/timer/<%= locals.ID_Asta %>`);
+                    const data = await responseTimer.json()
+                    console.log(data)
+                    return data
+                } catch (error) {
+                    console.error('Errore nella fetch dell\'API della scadenza', error);
+                }
+            }
+    
+            // Esegui la fetch dei dati all'avvio della pagina
+            const timerData = fetchTimerData();
+    
+            // Esegui la funzione di aggiornamento del timer ogni secondo
+            const timerMian = setInterval(updateTimer, 1000);
+    
+            // Esegui la funzione di aggiornamento dell'offerta ogni 10 minuti
+
+            function calculatePollingInterval(remainingTime) {
+                if (remainingTime <= 3600* 1000) {
+                    // Quando manca un'ora, passa a SSE
+                    return 0;
+                } else if (remainingTime >= 7 * 24 * 3600* 1000) {
+                    // Quando mancano 7 giorni o più, imposta il polling ogni 2 ore
+                    return 2 * 3600 * 1000; // 2 ore in millisecondi
+                } else {
+                    // Altrimenti, calcola l'intervallo di polling lineare
+                    const maxTime = 7 * 24 * 3600 * 1000 // 7giorni
+                    const maxPollingInterval = 2 * 3600 * 1000; // 2 ore in millisecondi
+                    const minTime = 3600 * 1000
+                    const minPollingInterval = 60 * 1000;   // 1 minuto in millisecondi
+                    const pollingInterval = (maxPollingInterval - minPollingInterval) / (maxTime-minTime) * (remainingTime - minTime) + minPollingInterval
+                    return pollingInterval
+                }
+            }
+
+            async function updateAndScheduleNextUpdate() {
+                updateOffer()
+                const scadenzaData = await timerData;
+                const scadenza = new Date(scadenzaData.Scadenza);
+                const now = new Date();
+                const timeRemaining = scadenza.getTime() - now.getTime();
+                // Calcola l'intervallo di polling
+                let polling = calculatePollingInterval(timeRemaining);
+
+                if(polling>0){
+                    // Aggiorna il timer a schermo ogni secondo
+                    const timor = setInterval(() => {
+                        polling-=1000
+                        updateTimerDisplay(polling);
+                        if(polling<=0){
+                            clearInterval(timor)
+                        }
+                    }, 1000);
+
+                    // Pianifica la prossima esecuzione con l'intervallo calcolato
+                    setTimeout(updateAndScheduleNextUpdate, polling);
+                }else{
+                    const sseDataElement = document.querySelector('#offer-description')
+                    document.querySelector('#countdown-timer-offer').innerHTML = "Real Time"
+                    const eventSource = new EventSource('/api/asta/sse/<%=locals.ID_Asta %>');
+            
+                    eventSource.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        sseDataElement.innerHTML = `Valore dell'offerta: ${data.offerta}`
+                    };
+            
+                    eventSource.onerror = (error) => {
+                        console.error('Errore SSE:', error);
+                    };
+                }
+            }
+
+            // Funzione per aggiornare il timer a schermo con il tempo rimanente fino al prossimo polling
+            function updateTimerDisplay(pollingInterval) {
+                const seconds = Math.floor(pollingInterval / 1000) % 60
+                const minutes = Math.floor(pollingInterval / 1000 / 60) % 60
+                const hours = Math.floor(pollingInterval / 1000 / 60 / 60)
+                const time = document.querySelector('#countdown-timer-offer')
+                if(seconds<=0){
+                    time.innerHTML = "Updating"
+                }else{
+                    time.innerHTML = `Next Update in ${hours}:${minutes}:${seconds}`
+                }
+            }
+
+            // Esegui updateAndScheduleNextUpdate() per la prima volta
+            updateAndScheduleNextUpdate();
+            
+            const offertaForm = document.querySelector('#offerta-form');
+
+            offertaForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const offertaValue = document.querySelector('#offerta').value;
+
+                // Crea un oggetto dati da inviare al server
+                const data = {
+                    offerta: offertaValue
+                };
+
+                // Invia la richiesta Fetch di tipo POST
+                try {
+                    const response = await fetch(`/api/asta/offerta/<%=locals.ID_Asta %>`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        // La richiesta è stata completata con successo
+                        // Puoi gestire la risposta dal server qui
+                        console.log('Offerta inviata con successo.');
+                        // Aggiorna l'UI se necessario
+                    } else {
+                        // Gestione degli errori
+                        console.error('Errore durante l\'invio dell\'offerta.');
+                    }
+                } catch (error) {
+                    console.error('Errore durante l\'invio dell\'offerta:', error);
+                }
+            });
+
+
+        </script>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+            crossorigin="anonymous"></script>
+    </body>
+</html>
