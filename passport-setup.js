@@ -1,7 +1,9 @@
 import {Strategy as LocalStrategy} from "passport-local"
 import crypto from "crypto"
+import passport from "passport"
+import db from "./database.js"
 
-function initializePassport(passport, db) {
+function initializePassport() {
     // Inizializzare le strategie di autenticazione
     // ...
 
