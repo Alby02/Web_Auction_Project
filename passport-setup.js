@@ -1,7 +1,8 @@
+import db from "./database.js"
+
 import {Strategy as LocalStrategy} from "passport-local"
 import crypto from "crypto"
 import passport from "passport"
-import db from "./database.js"
 
 passport.use(new LocalStrategy({
     usernameField: "email",
