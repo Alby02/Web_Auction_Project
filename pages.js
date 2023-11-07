@@ -5,12 +5,8 @@ import crypto from 'crypto';
 import sharp from 'sharp';
 import db from './database.js';
 import passport from 'passport';
-import expressWs from 'express-ws';
-
 
 const router = express.Router();
-expressWs.applyTo(router);
-
 
 router.post("/register", (req, res) => {
     const bb = busboy({ headers: req.headers })

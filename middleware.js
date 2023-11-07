@@ -1,12 +1,13 @@
+import app from "./server.js"
 import express from "express"
 import session from "express-session"
 import Store from "better-sqlite3-session-store"
-const SqliteStore = Store(session)
 import methodOverride from "method-override"
 import passport from "passport"
 import db from "./database.js"
-import initializePassport from "./passport-setup.js"
+import "./passport-setup.js"
 
+const SqliteStore = Store(session);
 
 app.set("view engine", "ejs")
 
@@ -35,7 +36,5 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-initializePassport();
-    
 
   
