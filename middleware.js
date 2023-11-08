@@ -1,3 +1,4 @@
+'use strict';
 import "./passport-setup.js"
 import db from "./database.js"
 import app from "./server.js"
@@ -10,6 +11,16 @@ import passport from "passport"
 
 
 const SqliteStore = Store(session);
+
+/*app.use((req, res, next) => {
+
+    if (!req.secure) {
+        const response = `https://${req.hostname}:${process.env.SECUREPORT}${req.url}`;
+        return res.redirect(response);
+    }
+
+    next();
+})*/
 
 app.set("view engine", "ejs")
 
@@ -31,6 +42,8 @@ app.use(session({
         }
     }),
     cookie: {
+        secure: true,
+        httpOnly: true,
         maxAge: ((((0 /*Giorni*/ * 24) + 8 /*Ore*/ ) * 60 + 0 /*Minuti*/ ) * 60 + 0 /*Secondi*/ ) * 1000 // 15min
     }
 }));

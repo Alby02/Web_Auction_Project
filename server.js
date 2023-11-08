@@ -1,3 +1,4 @@
+'use strict';
 import express from "express";
 import expressWs from "express-ws";
 import http from "http";

@@ -1,3 +1,4 @@
+'use strict';
 import db from "./database.js"
 
 import {Strategy as LocalStrategy} from "passport-local"

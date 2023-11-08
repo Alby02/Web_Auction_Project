@@ -1,3 +1,4 @@
+'use strict';
 import app, {server, secureServer} from "./server.js";
 import "./middleware.js";
 import router from "./pages.js";

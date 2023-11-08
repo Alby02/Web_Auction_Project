@@ -1,3 +1,4 @@
+'use strict';
 import express from 'express';
 import busboy from 'busboy';
 import fs from 'fs';
