@@ -39,6 +39,6 @@ const SocketInstance  = expressWs(app, secureServer, {
     leaveRouterUntouched: true
 });
 
-export default app
+export default app;
 
 export {SocketInstance, server, secureServer};
