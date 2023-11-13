@@ -18,7 +18,6 @@ const auctionSocket = new AuctionSocket();
 router.ws('/auction/:ID', (ws, req) => {
     
     const resourceId = req.params.ID;
-    console.log(resourceId);
 
     auctionSocket.addSocket(resourceId, ws);
     
@@ -31,40 +30,39 @@ router.ws('/auction/:ID', (ws, req) => {
     });
 
     ws.on('close', () => {
-        console.log("Bye suca");
         // Rimuovi la connessione dall'archivio
         auctionSocket.removeSocket(resourceId, ws);
     });
 });
 
-router.post("/register", (req, res) => {
-    const bb = busboy({ headers: req.headers })
-    const body = {}
-    body.file = {}
-
-    bb.on("file", (name, file, info) => {
-        const { filename, encoding, mimeType } = info;
-        body.file[name] = file.pipe(sharp().avif())
-    })
-
-    bb.on("field", (name, val, info) => {
-        body[name] = val
-    })
-
-    bb.on("close", () =>{
-        const salt = crypto.randomBytes(32)
-        const hash_pass = crypto.pbkdf2Sync(body.password, salt, 10000, 64, "sha512")
-        const row = db.prepare("INSERT INTO Users (FirstName, LastName, User, email, password, salt) VALUES (?, ?, ?, ?, ?, ?)").run([body.nome, body.cognome, body.username, body.email, hash_pass, salt])
-        fs.mkdirSync(`data/${row.lastInsertRowid}`, { recursive: true }) 
-        //fs.writeFileSync(`data/${row.ID}/${body.username}.avif`,  buffo)
-        body.file.immagine.pipe(fs.createWriteStream(`data/${row.lastInsertRowid}/${body.username}.avif`))
-        res.redirect("/login")
-    })
-
-    req.pipe(bb) 
+router.get("/register", (req, res) => {
+    if(req.isAuthenticated())
+        res.redirect("user")
+    else
+        res.sendFile("register.html", { root: './private' })
 })
 
-router.post('/login', passport.authenticate('local', {
+router.post("/register", (req, res) => {
+    const salt = crypto.randomBytes(32);
+    const hash_pass = crypto.pbkdf2Sync(req.body.password, salt, 10000, 64, "sha512");
+
+    const sql = "INSERT INTO Users (FirstName, LastName, User, email, password, salt) VALUES (?, ?, ?, ?, ?, ?)";
+    const row = db.prepare(sql).run(req.body.nome, req.body.cognome, req.body.username, req.body.email, hash_pass, salt);
+
+    fs.mkdirSync(`data/${row.lastInsertRowid}`, { recursive: true });
+    req.body.files.immagine.pipe(sharp().avif()).pipe(fs.createWriteStream(`data/${row.lastInsertRowid}/${req.body.username}.avif`));
+
+    res.redirect("/login");
+})
+
+router.get("/login-merchant", (req, res) =>{
+    if(req.isAuthenticated())
+        res.redirect("merchant")
+    else
+        res.sendFile("login-merchant.html", { root: './private' })
+});
+
+router.post("/login-merchant", passport.authenticate('local', {
     successRedirect: '/user',
     failureRedirect: '/'
 }));
@@ -74,14 +72,12 @@ router.get("/login", (req, res) => {
         res.redirect("user")
     else
         res.sendFile("login.html", { root: './private' })
-})
+});
 
-router.get("/register", (req, res) => {
-    if(req.isAuthenticated())
-        res.redirect("user")
-    else
-        res.sendFile("register.html", { root: './private' })
-})
+router.post('/login', passport.authenticate('local', {
+    successRedirect: '/user',
+    failureRedirect: '/'
+}));
 
 router.get("/", (req, res) => {
     let row = db.prepare("SELECT * FROM Asta ORDER BY RANDOM() LIMIT ?").all(6)
@@ -106,7 +102,11 @@ router.get("/user", (req, res) => {
         res.redirect("login")
 
     //fare la gestione e modifica dell'account
-})
+});
+
+router.get("/merchant", (req, res) => {
+
+});
 
 router.delete('/logout', (req, res, next) => {
     req.logout((err) => {
@@ -155,31 +155,23 @@ router.get("/Crea_Asta", (req, res) => {
 })
 
 router.post("/Crea_Asta", (req, res) => {
-    const bb = busboy({ headers: req.headers })
-    let body = {}
-    body.file = []
-    bb.on("file", (name, file, info) => {
-        const { filename, encoding, mimeType } = info;
-        body.file.push(file.pipe(sharp().avif()))
-    })
-    bb.on("field", (name, val, info) => {
-        body[name] = val 
-    })
-    bb.on("close", () =>{
-        let scade = new Date()
-        scade.setDate(scade.getDate() + parseInt(body.giorni))
-        scade.setHours(scade.getHours() + parseInt(body.ore))
-        const row = db.prepare("INSERT INTO Asta (Titolo, Descrizione, Offerta_Iniziale, Scadenza, ID_Creatore, img, Stato) VALUES (?, ?, ?, ?, ?, ?, 'attivo')").run([body.titolo, body.descrizione, body.offerta, scade.toISOString(), req.user.ID, body.file.length])
-        fs.mkdirSync(`data/${req.user.ID}/${row.lastInsertRowid}`, { recursive: true })
-        let i
-        let path
-        for(i = 0; i < body.file.length; i++){
-            path = `data/${req.user.ID}/${row.lastInsertRowid}/${i+1}.avif`
-            body.file[i].pipe(fs.createWriteStream(path))
-        }
-        res.redirect("/")
-    })
-    req.pipe(bb)
+    const scade = new Date();
+    scade.setDate(scade.getDate() + parseInt(req.body.giorni));
+    scade.setHours(scade.getHours() + parseInt(req.body.ore));
+
+    const sql = "INSERT INTO Asta (Titolo, Descrizione, Offerta_Iniziale, Scadenza, ID_Creatore, img, Stato) VALUES (?, ?, ?, ?, ?, ?, 'attivo')";
+    const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, req.body.files.length);
+
+    fs.mkdirSync(`data/${req.user.ID}/${row.lastInsertRowid}`, { recursive: true })
+    let i = 0;
+    for(const file in req.body.files)
+    {
+        i++;
+        const path = `data/${req.user.ID}/${row.lastInsertRowid}/${i}.avif`;
+        req.body.files[file].pipe(sharp().avif()).pipe(fs.createWriteStream(path));
+    }
+
+    res.redirect("/");
 })
 
 router.get("/api/asta/offerta/:ID_Offerta", (req, res)=>{

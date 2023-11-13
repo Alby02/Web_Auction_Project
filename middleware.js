@@ -8,6 +8,8 @@ import session from "express-session"
 import Store from "better-sqlite3-session-store"
 import methodOverride from "method-override"
 import passport from "passport"
+import busboy from "busboy"
+import { PassThrough } from "stream"
 
 
 const SqliteStore = Store(session);
@@ -27,6 +29,7 @@ app.set("view engine", "ejs")
 app.use(express.static("public", {extensions:['html']}))
 app.use(express.urlencoded({ extended: true}))
 app.use(express.json())
+app.use(multipart);
 
 app.use(methodOverride('_method'));
 
@@ -50,3 +53,31 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+function multipart (req, res, next)
+{
+    if(!(req.headers["content-type"] && req.headers["content-type"].includes("multipart/form-data"))){ 
+        next();
+        return;
+    }
+    
+    const bb = busboy({ headers: req.headers });
+    req.body = req.body || {};
+    const body = req.body;
+    const files = {};
+    body.files = files;
+
+    bb.on("file", (name, file, info) => {
+        files[name] = file.pipe(new PassThrough());
+    });
+
+    bb.on("field", (name, val, info) => {
+        body[name] = val;
+    });
+
+    bb.on("close", () =>{
+        next();
+    });
+
+    req.pipe(bb);
+}
