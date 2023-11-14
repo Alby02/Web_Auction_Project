@@ -4,7 +4,6 @@ import db from './database.js';
 import AuctionSocket from './AuctionSockets.js';
 
 import express from 'express';
-import busboy from 'busboy';
 import fs from 'fs';
 import crypto from 'crypto';
 import sharp from 'sharp';
@@ -37,9 +36,9 @@ router.ws('/auction/:ID', (ws, req) => {
 
 router.get("/register", (req, res) => {
     if(req.isAuthenticated())
-        res.redirect("user")
+        res.redirect("user");
     else
-        res.sendFile("register.html", { root: './private' })
+        res.sendFile("register.html", { root: './private' });
 })
 
 router.post("/register", (req, res) => {

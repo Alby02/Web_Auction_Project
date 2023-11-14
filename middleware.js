@@ -14,16 +14,6 @@ import { PassThrough } from "stream"
 
 const SqliteStore = Store(session);
 
-/*app.use((req, res, next) => {
-
-    if (!req.secure) {
-        const response = `https://${req.hostname}:${process.env.SECUREPORT}${req.url}`;
-        return res.redirect(response);
-    }
-
-    next();
-})*/
-
 app.set("view engine", "ejs")
 
 app.use(express.static("public", {extensions:['html']}))
