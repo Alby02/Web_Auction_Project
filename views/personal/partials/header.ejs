@@ -5,10 +5,12 @@
             <img src="/UserImg" alt="Immagine Profilo" class="rounded-circle" id="user-profile-img" data-bs-toggle="dropdown" aria-expanded="false" width="40" height="40">
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-profile-img">
                 
-                <% if (locals.Auctioner) { %>
+                <% if (locals.isCreated) { %>
                     <li><a class="dropdown-item" href="/Crea_Asta">Nuova Asta</a></li>
+                    <li><a class="dropdown-item" href="/personal">Aste Salvate</a></li>
+                <% } else if (locals.isAuctioner) { %>
+                    <li><a class="dropdown-item" href="/created">Le mie Aste</a></li>
                 <% } %>
-                
                 <li><form action="/logout?_method=DELETE" method="post">
                         <button class="dropdown-item" type="submit">logout</button>
                     </form>

@@ -14,11 +14,10 @@
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-profile-img">
 
                     <% if (locals.Auctioner) { %>
-                        <li><a class="dropdown-item" href="/personal">Le mie Aste</a></li>
-                    <% } else { %>
-                        <li><a class="dropdown-item" href="/personal">Aste salvate</a></li>
+                        <li><a class="dropdown-item" href="/created">Le mie Aste</a></li>
                     <% } %>
 
+                    <li><a class="dropdown-item" href="/personal">Aste salvate</a></li>
                     <li><form action="/logout?_method=DELETE" method="post">
                             <button class="dropdown-item" type="submit">logout</button>
                         </form>

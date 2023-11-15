@@ -8,6 +8,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import sharp from 'sharp';
 import passport from 'passport';
+import e from "express";
 
 const router = express.Router();
 SocketInstance.applyTo(router);
@@ -96,27 +97,32 @@ router.delete('/logout', (req, res, next) => {
     });
 });
 
-router.get("/personal", (req, res) => {
+router.get("/personal" , (req, res) => {
+    if(req.isAuthenticated())
+    {   
+        const element = [];
+        const sql = "SELECT * FROM Asta WHERE ID_Asta IN (SELECT ID_Asta FROM Saved_Auction WHERE ID_User = ?)";
+        const row = db.prepare(sql).all(req.user.ID);
+        row.forEach(r => {
+            element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
+        });
+        const auc = req.user.Tipo_Account == "Venditore";
+        res.render("personal/personal", {elementi: element, isAuctioner: auc});
+    }
+    else
+        res.redirect("login")
+});
+
+router.get("/created", (req, res) => {
     if(req.isAuthenticated())
     {
         const element = [];
-        if(req.user.Tipo_Account == "Venditore")
-        {
-            const row = db.prepare("SELECT * FROM Asta WHERE ID_Creatore = ?").all(req.user.ID);
-            row.forEach(r => {
-                element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
-            });
-            res.render("personal/personal", {elementi: element, Auctioner: true});
-        }
-        else
-        {
-            const sql = "SELECT * FROM Asta WHERE ID_Asta IN (SELECT ID_Asta FROM Saved_Auction WHERE ID_User = ?)";
-            const row = db.prepare(sql).all(req.user.ID);
-            row.forEach(r => {
-                element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
-            });
-            res.render("personal/personal", {elementi: element, Auctioner: false});
-        }
+        const row = db.prepare("SELECT * FROM Asta WHERE ID_Creatore = ?").all(req.user.ID);
+        row.forEach(r => {
+            element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
+        });
+        res.render("personal/personal", {elementi: element, isCreated: true});
+        
     }
     else
         res.redirect("login");
@@ -125,7 +131,45 @@ router.get("/personal", (req, res) => {
 router.get('/asta/:ID', (req, res) => {
     const ID_Asta = req.params.ID
     const row = db.prepare("SELECT * FROM Asta WHERE ID_Asta = ?").get(ID_Asta)
-    res.render("Asta", { Titolo: row.Titolo, Descrizione: row.Descrizione, User_ID: row.ID_Creatore, ID_Asta: row.ID_Asta, img: row.Img, auten: req.isAuthenticated()})
+    if(row.ID_Creatore == req.user.ID)
+    {
+        if(row.Stato == "attivo")
+        {
+            res.render("Asta", { Titolo: row.Titolo, Descrizione: row.Descrizione, User_ID: row.ID_Creatore, ID_Asta: row.ID_Asta, img: row.Img, auten: req.isAuthenticated(), Auctioner: true});
+        }
+        else
+        {
+            // selezionare la riga con l'offerta più alta
+            const sqlOffertaUtenteMaggiore = "SELECT * FROM Offerta WHERE ID_Asta = ? AND Offer = (SELECT MAX(Offer) FROM Offerta WHERE ID_Asta = ?)";
+            const row1 = db.prepare(sqlOffertaUtenteMaggiore).get(ID_Asta, ID_Asta)
+            if(!row1)
+            {
+                res.render("Asta", { Titolo: row.Titolo, Descrizione: row.Descrizione, User_ID: row.ID_Creatore, ID_Asta: row.ID_Asta, img: row.Img, auten: req.isAuthenticated(), Auctioner: true, noffer: true});
+            }
+            else
+            {
+                //selezione dati dell'utente che ha fatto l'offerta
+                const sqlUtente = "SELECT * FROM Users WHERE ID = ?";
+                const row2 = db.prepare(sqlUtente).get(row1.ID_User)
+                res.render("Asta", { Titolo: row.Titolo, Descrizione: row.Descrizione, User_ID: row.ID_Creatore, ID_Asta: row.ID_Asta, img: row.Img, auten: req.isAuthenticated(), Auctioner: true, Winner: row2.ID, Name: row2.User});
+            }
+        }
+    }
+    else
+    {
+        if(row.Stato == "attivo")
+        {
+            res.render("Asta", { Titolo: row.Titolo, Descrizione: row.Descrizione, User_ID: row.ID_Creatore, ID_Asta: row.ID_Asta, img: row.Img, auten: req.isAuthenticated()});
+        }
+        else
+        {
+            // ritorno qualcosa se la offerta più alta è la mia
+            const sql = "SELECT * FROM Offerta WHERE ID_Asta = ? AND ID_User = ? AND Offer = (SELECT MAX(Offer) FROM Offerta WHERE ID_Asta = ?)";
+            const row1 = db.prepare(sql).get(ID_Asta, req.user.ID, ID_Asta);
+            const Winner = row1 ? true : false;
+            res.render("Asta", { Titolo: row.Titolo, Descrizione: row.Descrizione, User_ID: row.ID_Creatore, ID_Asta: row.ID_Asta, img: row.Img, auten: req.isAuthenticated(), Winner: Winner});
+        }
+    }
 })
 
 router.get('/api/asta/:ID_User/:ID_Asta/:ID_IMG', (req, res) => {
@@ -165,6 +209,7 @@ router.post("/Crea_Asta", (req, res) => {
     const scade = new Date();
     scade.setDate(scade.getDate() + parseInt(req.body.giorni));
     scade.setHours(scade.getHours() + parseInt(req.body.ore));
+    scade.setMinutes(scade.getMinutes() + parseInt(req.body.minuti));
     const sql = "INSERT INTO Asta (Titolo, Descrizione, Offerta_Iniziale, Scadenza, ID_Creatore, img, Stato) VALUES (?, ?, ?, ?, ?, ?, 'attivo')";
     const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, req.body.numeroImmagini);
 

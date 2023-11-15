@@ -13,14 +13,14 @@
     <body>
         <header class="bg-dark text-white py-3">
             <div class="container-fluid d-flex justify-content-between align-items-center">
-                <a href="/" class="text-decoration-none"><h1 class="m-0">← Back</h1></a>
+                <a href="/" class="text-decoration-none"><h1 class="m-0">Home</h1></a>
                 <div class="user-profile">
                     <%if (!locals.auten){%>
                         <a href="/login" class="btn btn-primary">Accedi</a>
                     <%}else{%>
                         <img src="/UserImg" alt="Immagine Profilo" class="rounded-circle" id="user-profile-img" data-bs-toggle="dropdown" aria-expanded="false" width="40" height="40">
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-profile-img">
-                            <li><a class="dropdown-item" href="/user">Pagina Personale</a></li>
+                            <li><a class="dropdown-item" href="/personal">Pagina Personale</a></li>
                             <li><form action="/logout?_method=DELETE" method="post">
                                     <button class="dropdown-item" type="submit">logout</button>
                                 </form>
@@ -63,16 +63,31 @@
                             <div class="card-body">
                                 <h2><%= locals.Titolo %></h2>
                                 <p><%= locals.Descrizione %></p>
-                                <p id="countdown-timer-offer">Caricamento...</p>
                                 <p id="offer-description">Valore dell'offerta: Caricamento...</p>
                                 <% if (locals.auten) { %>
-                                    <form id="offerta-form">
-                                        <div class="mb-3">
-                                            <label for="offerta" class="form-label">Offerta:</label>
-                                            <input type="number" id="offerta" name="offerta" class="form-control">
-                                        </div>
-                                        <button type="submit" class="btn btn-primary" id="invia-offerta">Fai OFFERTA</button>
-                                    </form>
+                                    <% if (!locals.Auctioner) { %>
+                                        <% if (locals.Winner === undefined) { %>
+                                            <form id="offerta-form">
+                                                <div class="mb-3">
+                                                    <label for="offerta" class="form-label">Offerta:</label>
+                                                    <input type="number" id="offerta" name="offerta" class="form-control">
+                                                </div>
+                                                <button type="submit" class="btn btn-primary" id="invia-offerta">Fai OFFERTA</button>
+                                            </form>
+                                        <% } else if (locals.Winner === false) { %>
+                                            <p>Non hai vinto</p>
+                                        <% } else {%>
+                                            <p>Hai vinto</p>
+                                        <% } %>
+                                        
+                                    <% } else if (locals.noffer) { %>
+                                        <p>Non ci sono state offerte mi dispiace</p>
+                                    <% } else if (locals.Winner) { %>
+                                        <p>L'utente <%= locals.Name %> è il vincitore</p>
+                                    <% } else { %>
+                                        <p>L'asta non è conclusa</p>
+                                    <% } %>
+
                                 <% } else { %>
                                     <p>Autenticati per fare un'offerta.</p>
                                 <% } %>
@@ -100,7 +115,11 @@
                         const data = JSON.parse(event.data);
                         console.log(data);
                         offerDescription.innerHTML = `Valore dell'offerta: ${data.offerta}€`;
-                    }                    
+                    }  
+                    
+                    ws.onclose = () => {
+                        location.reload();
+                    }
     
                     offertaForm.addEventListener('submit', (e) => {
                         e.preventDefault();
