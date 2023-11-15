@@ -91,6 +91,7 @@
         </script>
         <% if (locals.auten) { %>
             <script>
+                const offerDescription = document.querySelector('#offer-description');
                 if(window.location.protocol == 'https:'){
                     const ws = new WebSocket(`wss://${window.location.host}/auction/<%= locals.ID_Asta %>`);
                     const offertaForm = document.querySelector('#offerta-form');

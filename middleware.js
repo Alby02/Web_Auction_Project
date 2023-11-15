@@ -9,7 +9,9 @@ import Store from "better-sqlite3-session-store"
 import methodOverride from "method-override"
 import passport from "passport"
 import busboy from "busboy"
-import { PassThrough } from "stream"
+import fs from "fs"
+import path from "path"
+import os from "os"
 
 
 const SqliteStore = Store(session);
@@ -58,7 +60,10 @@ function multipart (req, res, next)
     body.files = files;
 
     bb.on("file", (name, file, info) => {
-        files[name] = file.pipe(new PassThrough());
+        //save file to os.tmpdir() for later use
+        files[name] = path.join(os.tmpdir(), `${name}-${Date.now()}`);
+        const writeStream = fs.createWriteStream(files[name]);
+        file.pipe(writeStream);
     });
 
     bb.on("field", (name, val, info) => {
@@ -68,6 +73,8 @@ function multipart (req, res, next)
     bb.on("close", () =>{
         next();
     });
+
+    bb.on("error", (err) => next(err));
 
     req.pipe(bb);
 }

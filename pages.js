@@ -71,7 +71,8 @@ router.post("/register", (req, res) => {
     const row = db.prepare(sql).run(req.body.nome, req.body.cognome, req.body.username, req.body.email, hash_pass, salt, req.body.Account);
 
     fs.mkdirSync(`data/${row.lastInsertRowid}`, { recursive: true });
-    req.body.files.immagine.pipe(sharp().avif()).pipe(fs.createWriteStream(`data/${row.lastInsertRowid}/${req.body.username}.avif`));
+    fs.createReadStream(req.body.files.immagine).pipe(sharp().avif()).pipe(fs.createWriteStream(`data/${row.lastInsertRowid}/${req.body.username}.avif`));
+
 
     res.redirect("/login");
 })
@@ -161,13 +162,11 @@ router.get("/Crea_Asta", (req, res) => {
 })
 
 router.post("/Crea_Asta", (req, res) => {
-    console.log("ses")
     const scade = new Date();
     scade.setDate(scade.getDate() + parseInt(req.body.giorni));
     scade.setHours(scade.getHours() + parseInt(req.body.ore));
     const sql = "INSERT INTO Asta (Titolo, Descrizione, Offerta_Iniziale, Scadenza, ID_Creatore, img, Stato) VALUES (?, ?, ?, ?, ?, ?, 'attivo')";
-    console.log("Ciao");
-    const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, Object.keys(req.body.files).length);
+    const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, req.body.numeroImmagini);
 
     fs.mkdirSync(`data/${req.user.ID}/${row.lastInsertRowid}`, { recursive: true })
     let i = 0;
@@ -175,7 +174,8 @@ router.post("/Crea_Asta", (req, res) => {
     {
         i++;
         const path = `data/${req.user.ID}/${row.lastInsertRowid}/${i}.avif`;
-        req.body.files[file].pipe(sharp().avif()).pipe(fs.createWriteStream(path));
+        fs.createReadStream(req.body.files[file]).pipe(sharp().avif()).pipe(fs.createWriteStream(path));
+        
     }
 
     res.redirect("/");
