@@ -1,0 +1,30 @@
+<header class="bg-dark text-white py-3">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h1 class="m-0">Le Aste</h1>
+        <form action="/" method="GET" class="d-flex">
+            <input type="text" name="search" class="form-control me-2" placeholder="Cerca...">
+            <button type="submit" class="btn btn-primary">Cerca</button>
+        </form>
+        <div class="user-profile">
+            <%if (!locals.auten){%>
+                <a href="register" class="btn btn-primary">Registrati</a>
+                <a href="login" class="btn btn-primary">Accedi</a>
+            <%}else{%>
+                <img src="/UserImg" alt="Immagine Profilo" class="rounded-circle" id="user-profile-img" data-bs-toggle="dropdown" aria-expanded="false" width="40" height="40">
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-profile-img">
+
+                    <% if (locals.Auctioner) { %>
+                        <li><a class="dropdown-item" href="/personal">Le mie Aste</a></li>
+                    <% } else { %>
+                        <li><a class="dropdown-item" href="/personal">Aste salvate</a></li>
+                    <% } %>
+
+                    <li><form action="/logout?_method=DELETE" method="post">
+                            <button class="dropdown-item" type="submit">logout</button>
+                        </form>
+                    </li>
+                </ul>
+            <%}%>
+        </div>
+    </div>
+</header>

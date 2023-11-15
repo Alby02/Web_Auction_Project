@@ -46,7 +46,7 @@ app.use(passport.session());
 
 function multipart (req, res, next)
 {
-    if(!(req.headers["content-type"] && req.headers["content-type"].includes("multipart/form-data"))){ 
+        if(!(req.headers["content-type"] && req.headers["content-type"].includes("multipart/form-data"))){ 
         next();
         return;
     }
@@ -59,6 +59,7 @@ function multipart (req, res, next)
 
     bb.on("file", (name, file, info) => {
         files[name] = file.pipe(new PassThrough());
+        console.log("file");
     });
 
     bb.on("field", (name, val, info) => {
@@ -66,6 +67,7 @@ function multipart (req, res, next)
     });
 
     bb.on("close", () =>{
+        console.log("close");
         next();
     });
 

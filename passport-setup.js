@@ -25,7 +25,7 @@ passport.serializeUser(function (user, done) {
 });
 
 passport.deserializeUser(function (id, done) {
-    let row = db.prepare('SELECT ID, User FROM Users WHERE ID = ?').get(id);
+    let row = db.prepare('SELECT * FROM Users WHERE ID = ?').get(id);
     if (!row) return done(null, false);
     return done(null, row);
 });

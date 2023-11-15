@@ -82,59 +82,12 @@
                 </div>
             </div>
         </main>
-        <script>
-            const thumbnails = document.querySelectorAll('.img-thumbnail');
-            const mainImage = document.querySelector('.card-img-top');
-        
-            thumbnails.forEach((thumbnail, index) => {
-                thumbnail.addEventListener('click', () => {
-                    mainImage.src = `/api/asta/<%= locals.User_ID %>/<%= locals.ID_Asta %>/${index + 1}`;
-                });
-            });
+        <script type="module">
+            import {fetchTimer, fetchOfferta, setListeners } from '/js/Asta.js'
 
-
-            // Esegui la fetch dei dati della scadenza all'avvio della pagina
-            async function fetchTimer() {
-                const response = await fetch(`/api/asta/timer/<%= locals.ID_Asta %>`);
-                const data = await response.json();
-                function updateTimer(timerData) {
-                
-                    const countdownTimer = document.querySelector('#countdown-timer');
-                    const now = new Date()
-                    const scadenzaData = timerData
-                    const scadenza = new Date(scadenzaData.Scadenza)
-                    const timeRemaining = scadenza.getTime() - now.getTime();
-                    //console.log(`TimerData ${scadenza} Now ${now} timeRemaning ${timeRemaining}`)
-                    
-                    if (timeRemaining <= 0) {
-                        countdownTimer.innerHTML = 'Asta scaduta';
-                        clearInterval(timerMian)
-                    } else {
-                        const hours = Math.floor(((timeRemaining/1000)/60)/60)
-                        const minutes = Math.floor((timeRemaining/1000)/60)%60
-                        const seconds = Math.floor(timeRemaining/1000)%60;
-                        countdownTimer.innerHTML = `Tempo rimasto: ${hours}:${minutes}:${seconds}`;
-                    }
-                }
-                // Esegui la funzione di aggiornamento del timer ogni secondo
-                const timerMian = setInterval(updateTimer, 1000, data);
-            }
-
-            Promise.resolve(fetchTimer());
-
-            async function fetchOfferta(){
-                
-                const valueOffer = await fetch(`/api/asta/offerta/<%= locals.ID_Asta %>`);
-                const dataOffer = await valueOffer.json();
-                offerDescription.innerHTML = `Valore dell'offerta: ${dataOffer.Offerta}€`;
-            }
-
-            const offerDescription = document.querySelector('#offer-description');
-            
-            Promise.resolve(fetchOfferta());
-            
-            
-
+            Promise.resolve(fetchTimer("<%= locals.ID_Asta %>"));
+            Promise.resolve(fetchOfferta("<%= locals.ID_Asta %>"));
+            setListeners("<%= locals.User_ID %>", "<%= locals.ID_Asta %>");
         </script>
         <% if (locals.auten) { %>
             <script>
@@ -160,9 +113,6 @@
         <% } %>
         
 
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
-            crossorigin="anonymous"></script>
+        <%- include("./partials/bootstrap.ejs") %>
     </body>
 </html>

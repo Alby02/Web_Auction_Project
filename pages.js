@@ -34,19 +34,41 @@ router.ws('/auction/:ID', (ws, req) => {
     });
 });
 
+router.get("/", (req, res) => {
+
+    let row;
+    if(req.query.search){
+        const sql = "SELECT * FROM Asta WHERE Titolo LIKE ? OR Descrizione LIKE ? ORDER BY RANDOM() LIMIT ?";
+        row = db.prepare(sql).all(req.query.search, req.query.search, 6);
+    }
+    else
+    {
+        const sql = "SELECT * FROM Asta ORDER BY RANDOM() LIMIT ?";
+        row = db.prepare(sql).all(6);
+    }
+    
+    const element = [];
+    row.forEach(r => {
+        element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
+    })
+    const luie = req.isAuthenticated() ? req.user.Tipo_Account == "Venditore" : false;
+    res.render("index/index.ejs", { elementi: element, auten: req.isAuthenticated(), Auctioner: luie});
+});
+
+
 router.get("/register", (req, res) => {
     if(req.isAuthenticated())
-        res.redirect("user");
+        res.redirect("parsonal");
     else
         res.sendFile("register.html", { root: './private' });
-})
+});
 
 router.post("/register", (req, res) => {
     const salt = crypto.randomBytes(32);
     const hash_pass = crypto.pbkdf2Sync(req.body.password, salt, 10000, 64, "sha512");
 
-    const sql = "INSERT INTO Users (FirstName, LastName, User, email, password, salt) VALUES (?, ?, ?, ?, ?, ?)";
-    const row = db.prepare(sql).run(req.body.nome, req.body.cognome, req.body.username, req.body.email, hash_pass, salt);
+    const sql = "INSERT INTO Users (FirstName, LastName, User, email, password, salt, Tipo_Account) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    const row = db.prepare(sql).run(req.body.nome, req.body.cognome, req.body.username, req.body.email, hash_pass, salt, req.body.Account);
 
     fs.mkdirSync(`data/${row.lastInsertRowid}`, { recursive: true });
     req.body.files.immagine.pipe(sharp().avif()).pipe(fs.createWriteStream(`data/${row.lastInsertRowid}/${req.body.username}.avif`));
@@ -54,64 +76,49 @@ router.post("/register", (req, res) => {
     res.redirect("/login");
 })
 
-router.get("/login-merchant", (req, res) =>{
+router.get("/login", (req, res) =>{
     if(req.isAuthenticated())
-        res.redirect("merchant")
-    else
-        res.sendFile("login-merchant.html", { root: './private' })
-});
-
-router.post("/login-merchant", passport.authenticate('local', {
-    successRedirect: '/user',
-    failureRedirect: '/'
-}));
-
-router.get("/login", (req, res) => {
-    if(req.isAuthenticated())
-        res.redirect("user")
+        res.redirect("personal")
     else
         res.sendFile("login.html", { root: './private' })
 });
 
-router.post('/login', passport.authenticate('local', {
-    successRedirect: '/user',
+router.post("/login", passport.authenticate('local', {
+    successRedirect: '/personal',
     failureRedirect: '/'
 }));
-
-router.get("/", (req, res) => {
-    let row = db.prepare("SELECT * FROM Asta ORDER BY RANDOM() LIMIT ?").all(6)
-    let element = []
-    row.forEach(r => {
-        element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore})
-    })
-    res.render("index.ejs", { elementi: element, auten: req.isAuthenticated()})
-    //fare la quari delle aste dal database aste Random
-})
-
-router.get("/user", (req, res) => {
-    if(req.isAuthenticated()){
-        let element = []
-        const row = db.prepare("SELECT * FROM Asta WHERE ID_Creatore = ?").all(req.user.ID)
-        row.forEach(r => {
-            element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore})
-        })
-        res.render("user", {elementi: element})
-    }
-    else
-        res.redirect("login")
-
-    //fare la gestione e modifica dell'account
-});
-
-router.get("/merchant", (req, res) => {
-
-});
 
 router.delete('/logout', (req, res, next) => {
     req.logout((err) => {
         if (err) { return next(err); }
         res.redirect(303,'/');
     });
+});
+
+router.get("/personal", (req, res) => {
+    if(req.isAuthenticated())
+    {
+        const element = [];
+        if(req.user.Tipo_Account == "Venditore")
+        {
+            const row = db.prepare("SELECT * FROM Asta WHERE ID_Creatore = ?").all(req.user.ID);
+            row.forEach(r => {
+                element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
+            });
+            res.render("personal/personal", {elementi: element, Auctioner: true});
+        }
+        else
+        {
+            const sql = "SELECT * FROM Asta WHERE ID_Asta IN (SELECT ID_Asta FROM Saved_Auction WHERE ID_User = ?)";
+            const row = db.prepare(sql).all(req.user.ID);
+            row.forEach(r => {
+                element.push({Titolo: r.Titolo, Descrizione: r.Descrizione, Asta: r.ID_Asta, Creatore: r.ID_Creatore});
+            });
+            res.render("personal/personal", {elementi: element, Auctioner: false});
+        }
+    }
+    else
+        res.redirect("login");
 });
 
 router.get('/asta/:ID', (req, res) => {
@@ -154,12 +161,11 @@ router.get("/Crea_Asta", (req, res) => {
 })
 
 router.post("/Crea_Asta", (req, res) => {
-    const scade = new Date();
+        const scade = new Date();
     scade.setDate(scade.getDate() + parseInt(req.body.giorni));
     scade.setHours(scade.getHours() + parseInt(req.body.ore));
-
     const sql = "INSERT INTO Asta (Titolo, Descrizione, Offerta_Iniziale, Scadenza, ID_Creatore, img, Stato) VALUES (?, ?, ?, ?, ?, ?, 'attivo')";
-    const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, req.body.files.length);
+        const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, req.body.files.length);
 
     fs.mkdirSync(`data/${req.user.ID}/${row.lastInsertRowid}`, { recursive: true })
     let i = 0;

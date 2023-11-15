@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <title>Aste Home Page</title>
+        <%- include("../partials/head.ejs") %>
+    </head>
+    <body>
+        
+        <%- include("./partials/header.ejs") %>
+
+        <main class="container-fluid mt-4">
+            <div class="row row-cols-2 row-cols-md-3">
+                
+                <% locals.elementi.forEach(element => {%>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <a href="/asta/<%=element.Asta%>" class="text-decoration-none">
+                            <div class="card">
+                                <img src="/api/asta/<%=element.Creatore %>/<%= element.Asta%>/1" alt="Immagine" class="card-img-top">
+                                <div class="card-body">
+                                    <h2 class="card-title"><%=element.Titolo%></h2>
+                                    <p class="card-text"><%=element.Descrizione%></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                <%})%>
+                <!-- Aggiungi altri pannelli qui -->
+            </div>
+        </main>
+        
+        <%- include("../partials/bootstrap.ejs") %>
+    </body>
+</html>

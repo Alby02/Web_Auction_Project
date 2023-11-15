@@ -102,39 +102,20 @@
         </div>
     </div>
 
-    <!-- Collegamento a Bootstrap JS (richiede jQuery) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- ... Il codice HTML precedente rimane invariato ... -->
+    <%- include("./partials/bootstrap.ejs") %>
 
-    <script>
+    <script type="module">
         // Funzione per gestire il caricamento delle immagini e creare anteprime
-        function handleImageUpload(input, preview) {
-            input.addEventListener('change', function () {
-                var file = this.files[0];
-                var reader = new FileReader();
-
-                reader.onload = function () {
-                    preview.src = reader.result;
-                    preview.style.display = 'block';
-                }
-
-                if (file) {
-                    reader.readAsDataURL(file);
-                } else {
-                    preview.src = '';
-                    preview.style.display = 'none';
-                }
-            });
-        }
+        import handleImageUpload from '/js/imagePreview.js';
 
         // Ottenere il numero di campi di caricamento delle immagini
-        var numImmaginiInput = document.getElementById('numeroImmagini');
-        var numImmagini = parseInt(numImmaginiInput.value);
+        const numImmaginiInput = document.getElementById('numeroImmagini');
+        const numImmagini = parseInt(numImmaginiInput.value);
 
         // Creare anteprime per ciascun campo di caricamento delle immagini
-        for (var i = 0; i < numImmagini; i++) {
-            var imageInput = document.getElementsByName('immagine' + i)[0];
-            var imagePreview = document.createElement('img');
+        for (let i = 0; i < numImmagini; i++) {
+            const imageInput = document.getElementsByName('immagine' + i)[0];
+            const imagePreview = document.createElement('img');
             imagePreview.className = 'image-preview mt-2';
             handleImageUpload(imageInput, imagePreview);
 
@@ -144,20 +125,20 @@
 
         // Aggiungere un listener per l'evento 'input' sul campo del numero di immagini
         numImmaginiInput.addEventListener('input', function () {
-            var newNumImmagini = parseInt(this.value);
-            var imageUploadContainer = document.getElementById('image-upload-container');
+            const newNumImmagini = parseInt(this.value);
+            const imageUploadContainer = document.getElementById('image-upload-container');
             imageUploadContainer.innerHTML = '';
 
             // Creare nuovi campi di caricamento delle immagini e anteprime
-            for (var i = 0; i < newNumImmagini; i++) {
-                var imageInput = document.createElement('input');
+            for (let i = 0; i < newNumImmagini; i++) {
+                const imageInput = document.createElement('input');
                 imageInput.type = 'file';
                 imageInput.name = 'immagine' + i;
                 imageInput.accept = 'image/*';
                 imageInput.className = 'form-control';
                 imageInput.required = true;
 
-                var imagePreview = document.createElement('img');
+                const imagePreview = document.createElement('img');
                 imagePreview.className = 'image-preview mt-2';
                 handleImageUpload(imageInput, imagePreview);
 
