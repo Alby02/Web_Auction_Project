@@ -161,11 +161,13 @@ router.get("/Crea_Asta", (req, res) => {
 })
 
 router.post("/Crea_Asta", (req, res) => {
-        const scade = new Date();
+    console.log("ses")
+    const scade = new Date();
     scade.setDate(scade.getDate() + parseInt(req.body.giorni));
     scade.setHours(scade.getHours() + parseInt(req.body.ore));
     const sql = "INSERT INTO Asta (Titolo, Descrizione, Offerta_Iniziale, Scadenza, ID_Creatore, img, Stato) VALUES (?, ?, ?, ?, ?, ?, 'attivo')";
-        const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, req.body.files.length);
+    console.log("Ciao");
+    const row = db.prepare(sql).run(req.body.titolo, req.body.descrizione, req.body.offerta, scade.toISOString(), req.user.ID, Object.keys(req.body.files).length);
 
     fs.mkdirSync(`data/${req.user.ID}/${row.lastInsertRowid}`, { recursive: true })
     let i = 0;
