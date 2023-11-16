@@ -236,5 +236,30 @@ router.get("/api/asta/timer/:ID_Offerta", (req, res)=>{
     res.json(ses)
 })
 
+router.get("/api/Bookmark/:ID_Asta", (req, res) => {
+    const sql = "SELECT * FROM Saved_Auction WHERE ID_User = ? AND ID_Asta = ?";
+    const row = db.prepare(sql).get(req.user.ID, req.params.ID_Asta);
+    const isBookmarked = row ? true : false;
+    res.json({Bookmarked: isBookmarked});
+})
+
+router.post("/api/Bookmark/:ID_Asta", (req, res) => {
+    const sql = "INSERT INTO Saved_Auction (ID_User, ID_Asta) VALUES (?, ?)";
+    const row = db.prepare(sql).run(req.user.ID, req.params.ID_Asta);
+    if(row.changes > 0)
+        res.status(200).end();
+    else
+        res.status(400).end();
+})
+
+router.delete("/api/Bookmark/:ID_Asta", (req, res) => {
+    const sql = "DELETE FROM Saved_Auction WHERE ID_User = ? AND ID_Asta = ?";
+    const row = db.prepare(sql).run(req.user.ID, req.params.ID_Asta);
+    if(row.changes > 0)
+        res.status(200).end();
+    else
+        res.status(400).end();
+})
+
 
 export default router
